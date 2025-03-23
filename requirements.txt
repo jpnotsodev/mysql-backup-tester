@@ -1,0 +1,2 @@
+async-tkinter-loop==0.9.3
+typing_extensions==4.12.2
