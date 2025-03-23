@@ -5,6 +5,8 @@ from tkinter.font import Font
 import asyncio
 from datetime import datetime
 from pathlib import Path
+import pymysql
+import pandas
 
 TITLE = ""
 WIDTH = 800
@@ -56,8 +58,24 @@ class App():
                 or (proc.returncode and proc.returncode != 1):
             print("Output ", stdout.decode())
 
-    async def _missing_tables_check():
-        pass
+    @async_handler
+    async def _missing_tables_check(self, host, user, password, port):
+        tablelist = []
+        other_tablelist = []
+        conx = pymysql.connect(host=host,
+            user=user, password=password, port=port, database="credman")
+        with conx as conx:
+            with conx.cursor() as cursor:
+                cursor.execute("SHOW TABLES;")
+                tables = cursor.fetchall()
+                for table in tables:
+                    tablelist.append(table[0])
+                    if table[0] != "credential":
+                        other_tablelist.append(table[0])
+                tables_df = pandas.DataFrame(tablelist, columns=["table_name"])
+                others_df = pandas.DataFrame(other_tablelist, columns=["table_name"])
+        print(tables_df.join(other=others_df, rsuffix="_r"))
+
 
     async def _missing_data_check():
         pass
