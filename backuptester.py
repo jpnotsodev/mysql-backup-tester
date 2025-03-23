@@ -4,11 +4,13 @@ from tkinter import Tk, ttk
 from tkinter.font import Font
 import asyncio
 from datetime import datetime
+from pathlib import Path
 
 TITLE = ""
 WIDTH = 800
 HEIGHT = 570
 RESIZABLE = False, False
+MYSQL_BIN_PATH = r"C:\Program Files\MySQL\MySQL Server 8.3\bin"
 
 running = False
 
@@ -23,6 +25,43 @@ class App():
         y_pos = int((screenheight-H)/2)-20
         return "{0}x{1}+{2}+{3}" \
             .format(W, H, x_pos, y_pos)
+    
+    async def _restore_db(self, host, user, password, port, filepath):
+        cmd = None
+
+        cmd = f'"{MYSQL_BIN_PATH}\\mysql.exe" '
+        cmd += "--host={} ".format(host)
+        cmd += "--user={} ".format(user)
+        cmd += "--password={} ".format(password)
+        cmd += "--port={} ".format(port)
+        cmd += '--execute="SELEC1"'
+        # cmd += "< {}".format(filepath)
+
+        print(cmd)
+        
+        proc = await asyncio.create_subprocess_shell(cmd,
+            stderr=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE)
+        
+        stdout, stderr = await proc.communicate()
+
+        # print("return code", proc.returncode)
+        # print("stderr", stderr.decode())
+        # print("stdout", stdout.decode())
+        
+        if proc.returncode is not None \
+            and proc.returncode == 1:
+            print("Err ", stderr.decode())
+        if (proc.returncode and proc.returncode == 0) \
+                or (proc.returncode and proc.returncode != 1):
+            print("Output ", stdout.decode())
+
+    async def _missing_tables_check():
+        pass
+
+    async def _missing_data_check():
+        pass
+
     
     @async_handler
     async def _test_restore(self):
@@ -68,6 +107,15 @@ class App():
         self.Root = Tk()
         self.Root.geometry(self._find_center(self.Root, WIDTH, HEIGHT))
         # self.Root.resizable(*RESIZABLE)
+
+        # Checks for any active installation of mysql server
+        import subprocess
+        cmd = "where mysql.exe"
+        proc = subprocess.run(cmd, check=False,
+            capture_output=True, shell=True)
+        if proc.stderr:
+            print(proc.stderr)
+            return
 
         self.MainFrame = Frame(self.Root)
         self.MainFrame.pack(fill=BOTH, expand=TRUE)
